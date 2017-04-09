@@ -24,21 +24,23 @@ www.stefan-petrick.de/wordpress_beta
 
 // Matrix Size
 
-const uint8_t WIDTH  = 32;
-const uint8_t HEIGHT = 32;
+const uint8_t WIDTH  = 30;
+const uint8_t HEIGHT = 30;
 int pot1Out;
 
 // LED Setup
 
-#define LED_PIN     22
+#define LED_PIN     20
+//On Octo, pin 20 is strip 6 on bottom jack
 #define COLOR_ORDER GRB
 #define CHIPSET     WS2812
 #define BRIGHTNESS  200
 #define NUM_LEDS (WIDTH * HEIGHT)
 
 //Pot Setup
-#define POT1 A9
-
+#define POT1 A4 //18
+#define POT2 A5 //19
+#define POT3 A8 //22
 CRGB leds[NUM_LEDS];
 //Potentiometer pot[3]; 
 
@@ -76,12 +78,12 @@ int timers = sizeof(multiTimer) / sizeof(multiTimer[0]);
 
 // Setup 3 pots. refactor to use struct?
 Potentiometer pot1 = Potentiometer(POT1);
-//Potentiometer pot2 = Potentiometer(2);
-//Potentiometer pot3 = Potentiometer(3);
+Potentiometer pot2 = Potentiometer(POT2);
+Potentiometer pot3 = Potentiometer(POT3);
    
 void setup() {
   //Debug
-  Serial.begin(9600);
+  //Serial.begin(9600);
 
   // LED Setup
 
@@ -139,9 +141,9 @@ void loop()
 {
   // let the oscillators swing
   UpdateTimers();
-  CheckPots(1, 50, 150);
-  Serial.println(pot1Out);
-  multiTimer[0].tact= pot1Out;
+  CheckPots(1, 50, 250);
+  //Serial.println(pot1Out);
+  //multiTimer[0].tact= pot1Out;
   // check pot number, 
 /*  
   // draw just a line defined by 5 oscillators
@@ -179,7 +181,7 @@ void loop()
   StreamVertical(120);    // and here
   
   // x wind
-  StreamHorizontal(110);  // and here
+  StreamHorizontal(pot1Out);  // and here
    
   // main spiral
   SpiralStream(6,7,8,150);// and here
