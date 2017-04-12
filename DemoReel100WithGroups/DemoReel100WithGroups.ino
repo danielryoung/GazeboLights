@@ -18,7 +18,8 @@ FASTLED_USING_NAMESPACE
 #define DATA_PIN    22
 //#define CLK_PIN   4
 #define LED_TYPE    WS2811
-#define COLOR_ORDER GRB
+//#define COLOR_ORDER GRB
+#define COLOR_ORDER RGB
 #define NUM_LEDS    20
 CRGB leds[NUM_LEDS];
 
@@ -47,19 +48,19 @@ pixel pixels[NUM_LEDS] = {
   ,{3,0,2,0}
   ,{4,0,2,0}
   ,{5,1,1,0}
-  ,{6,2,0,0}
+  ,{6,1,0,0}
   ,{7,1,1,0}
   ,{8,1,1,0}
   ,{9,1,1,0}
-  ,{10,2,0,0}
+  ,{10,1,0,0}
   ,{11,1,1,0}
-  ,{12,2,0,0}
-  ,{13,2,0,0}
-  ,{14,2,0,0}
-  ,{15,3,1,0}
-  ,{16,3,1,0}
-  ,{17,3,0,0}
-  ,{18,3,0,0}
+  ,{12,1,0,0}
+  ,{13,1,0,0}
+  ,{14,1,0,0}
+  ,{15,1,1,0}
+  ,{16,1,1,0}
+  ,{17,1,0,0}
+  ,{18,1,0,0}
   ,{19,3,1,0}
 //pixel pixels[600] = {
 //{0,0,0,0}
@@ -662,10 +663,13 @@ pixel pixels[NUM_LEDS] = {
 //,{597,0,124,0}
 //,{598,0,125,0}
 //,{599,0,126,0}
- 
+// 
    };
 
 int group[NUM_GROUPS];
+CRGBPalette16 currentPalette;
+
+
 void setup() {
   delay(3000); // 3 second delay for recovery
   
@@ -675,12 +679,17 @@ void setup() {
 
   // set master brightness control
   FastLED.setBrightness(BRIGHTNESS);
+
+  //TESTING
+  int bpmIterator;
+  randomSeed(analogRead(0));
 }
 
 
 // List of patterns to cycle through.  Each is defined as a separate function below.
 typedef void (*SimplePatternList[])();
-SimplePatternList gPatterns = { bpmGroup };
+SimplePatternList gPatterns = { bpmGroupBeta };
+  //bpmGroup, bpmGroupGPLessIndexRange,bpmGroupRandPalette, bpmGroup60, bpmGroup120  };
 
 uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
 uint8_t gHue = 0; // rotating "base color" used by many of the patterns
@@ -694,19 +703,41 @@ void loop()
   FastLED.show();  
   // insert a delay to keep the framerate modest
   FastLED.delay(1000/FRAMES_PER_SECOND); 
-
+  
+  EVERY_N_SECONDS (30) { SetupTotallyRandomPalette(); CRGBPalette16 palette = currentPalette;}
+  
   // do some periodic updates
   EVERY_N_MILLISECONDS( 20 ) { gHue++; } // slowly cycle the "base color" through the rainbow
   EVERY_N_SECONDS( 10 ) { nextPattern(); } // change patterns periodically
 }
 
 #define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
-
+// This function fills the palette with totally random colors.
+void SetupTotallyRandomPalette()
+{
+    for( int i = 0; i < 16; i++) {
+        currentPalette[i] = CHSV( random8(), 255, random8());
+    }
+}
 void nextPattern()
 {
   // add one to the current pattern number, and wrap around at the end
   gCurrentPatternNumber = (gCurrentPatternNumber + 1) % ARRAY_SIZE( gPatterns);
 }
+void SetupPurpleAndGreenPalette()
+{
+    CRGB purple = CHSV( HUE_PURPLE, 255, 255);
+    CRGB green  = CHSV( HUE_GREEN, 255, 255);
+    CRGB black  = CRGB::Black;
+    
+    currentPalette = CRGBPalette16(
+                                   green,  green,  black,  black,
+                                   purple, purple, black,  black,
+                                   green,  green,  black,  black,
+                                   purple, purple, black,  black );
+}
+
+
 
 void rainbow() 
 {
@@ -765,7 +796,148 @@ void bpmGroup()
     //get a random color from pallette for each group
     int randomColorIndex = map(g,0,NUM_GROUPS,0,255);
   // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
+    uint8_t BeatsPerMinute = 60;
+    CRGBPalette16 palette = PartyColors_p;
+    uint8_t beat = beatsin8( BeatsPerMinute, 64, 255);
+    
+     for( int l = 0; l < NUM_LEDS; l++){ //9948
+      leds[l] = ColorFromPalette(palette, gHue+(l*2) + randomColorIndex, beat-gHue+(l*10));
+      //if(pixels[l].groupNum == g) {leds[l] = ColorFromPalette( palette, randomColorIndex, brightness);  } 
+      //if(pixels[l].groupNum == g) {leds[l] =ColorFromPalette(palette, randomColorIndex, 100);}
+    }
+  }
+}
+
+void bpmGroupBeta()
+{
+   
+    uint8_t brightness = 255;
+
+  for( int g = 0; g < NUM_GROUPS; g++) {
+
+    //get a random color from pallette for each group
+    int randomColorIndex = randomColorIndex + map(g,0, NUM_GROUPS ,15,105);
+  // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
+    uint8_t BeatsPerMinute = 62;
+    //CRGBPalette16 palette = ForestColors_p;
+     CRGBPalette16 palette = RainbowColors_p;
+    //CRGBPalette16 palette = currentPalette; 
+    uint8_t beat = beatsin8( BeatsPerMinute, 64, 255);
+    
+     for( int l = 0; l < NUM_LEDS; l++){ //9948
+      //leds[l] = ColorFromPalette(palette, gHue+(l*2) + randomColorIndex, beat-gHue+(l*10)); regular group full rainbow
+      leds[l] = ColorFromPalette(palette, randomColorIndex + (l *3 ) + gHue, beat-gHue+(l*2));
+      //if(pixels[l].groupNum == g) {leds[l] = ColorFromPalette( palette, randomColorIndex, brightness);  } 
+      //if(pixels[l].groupNum == g) {leds[l] =ColorFromPalette(palette, randomColorIndex, 100);}
+    }
+  }
+}
+
+void bpmGroupMusic()
+{
+   
+    uint8_t brightness = 255;
+
+  for( int g = 0; g < NUM_GROUPS; g++) {
+
+    //get a random color from pallette for each group
+    int randomColorIndex = randomColorIndex + map(g,0, NUM_GROUPS ,15,105);
+  // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
+    uint8_t BeatsPerMinute = 62;
+    //CRGBPalette16 palette = ForestColors_p;
+     CRGBPalette16 palette = RainbowColors_p;
+    //CRGBPalette16 palette = currentPalette; 
+    uint8_t beat = beatsin8( BeatsPerMinute, 64, 255);
+    
+     for( int l = 0; l < NUM_LEDS; l++){ //9948
+      //leds[l] = ColorFromPalette(palette, gHue+(l*2) + randomColorIndex, beat-gHue+(l*10)); regular group full rainbow
+      leds[l] = ColorFromPalette(palette, randomColorIndex + (l *3 ) + gHue, beat-gHue+(l*2));
+      //if(pixels[l].groupNum == g) {leds[l] = ColorFromPalette( palette, randomColorIndex, brightness);  } 
+      //if(pixels[l].groupNum == g) {leds[l] =ColorFromPalette(palette, randomColorIndex, 100);}
+    }
+  }
+}
+
+
+void bpmGroupGPLessIndexRange()
+{
+   
+// uint8_t brightness = 255;
+ SetupPurpleAndGreenPalette();
+ CRGBPalette16 palette = currentPalette;
+ 
+  for( int g = 0; g < NUM_GROUPS; g++) {
+
+    //get a random color from pallette for each group
+    int randomColorIndex = map(g,0,NUM_GROUPS,0,255);
+  // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
     uint8_t BeatsPerMinute = 30;
+
+    uint8_t beat = beatsin8( BeatsPerMinute, 64, 255);
+    
+     for( int l = 0; l < NUM_LEDS; l++){ //9948
+      leds[l] = ColorFromPalette(palette,  randomColorIndex, beat-gHue+(l*2));
+      //if(pixels[l].groupNum == g) {leds[l] = ColorFromPalette( palette, randomColorIndex, brightness);  } 
+      //if(pixels[l].groupNum == g) {leds[l] =ColorFromPalette(palette, randomColorIndex, 100);}
+    }
+  }
+}
+
+void bpmGroupRandPalette()
+{
+   
+ //uint8_t brightness = 255;
+//SetupTotallyRandomPalette(); 
+ CRGBPalette16 palette = currentPalette;
+ 
+  for( int g = 0; g < NUM_GROUPS; g++) {
+
+    //get a random color from pallette for each group
+    int randomColorIndex = map(g,0,NUM_GROUPS,0,255);
+  // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
+    uint8_t BeatsPerMinute = 60;
+
+    uint8_t beat = beatsin8( BeatsPerMinute, 64, 255);
+    
+     for( int l = 0; l < NUM_LEDS; l++){ //9948
+      leds[l] = ColorFromPalette(palette, gHue+(l*2) + randomColorIndex, beat-gHue+(l*10));
+      //if(pixels[l].groupNum == g) {leds[l] = ColorFromPalette( palette, randomColorIndex, brightness);  } 
+      //if(pixels[l].groupNum == g) {leds[l] =ColorFromPalette(palette, randomColorIndex, 100);}
+    }
+  }
+}
+
+void bpmGroup60()
+{
+   
+  //  uint8_t brightness = 255;
+  for( int g = 0; g < NUM_GROUPS; g++) {
+
+    //get a random color from pallette for each group
+    int randomColorIndex = map(g,0,NUM_GROUPS,0,255);
+  // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
+    uint8_t BeatsPerMinute = 60;
+    CRGBPalette16 palette = PartyColors_p;
+    uint8_t beat = beatsin8( BeatsPerMinute, 64, 255);
+    
+     for( int l = 0; l < NUM_LEDS; l++){ //9948
+      leds[l] = ColorFromPalette(palette, gHue+(l*2) + randomColorIndex, beat-gHue+(l*10));
+      //if(pixels[l].groupNum == g) {leds[l] = ColorFromPalette( palette, randomColorIndex, brightness);  } 
+      //if(pixels[l].groupNum == g) {leds[l] =ColorFromPalette(palette, randomColorIndex, 100);}
+    }
+  }
+}
+
+void bpmGroup120()
+{
+   
+   // uint8_t brightness = 255;
+  for( int g = 0; g < NUM_GROUPS; g++) {
+
+    //get a random color from pallette for each group
+    int randomColorIndex = map(g,0,NUM_GROUPS,0,255);
+  // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
+    uint8_t BeatsPerMinute = 120;
     CRGBPalette16 palette = PartyColors_p;
     uint8_t beat = beatsin8( BeatsPerMinute, 64, 255);
     
