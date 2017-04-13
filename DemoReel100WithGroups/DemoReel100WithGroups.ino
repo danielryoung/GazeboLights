@@ -34,7 +34,7 @@ struct pixel
       
       uint8_t groupNum;
       // this is a group it belongs to
-      unsigned long radialPosition;
+      uint8_t radialPosition;
       // this is an int indicating close to center. 0 is center 8 is outside
       uint8_t cluster;
    };
@@ -57,10 +57,10 @@ pixel pixels[NUM_LEDS] = {
 //  ,{12,1,0,0}
 //  ,{13,1,0,0}
 //  ,{14,1,0,0}
-//  ,{15,1,1,0}
-//  ,{16,1,1,0}
-//  ,{17,1,0,0}
-//  ,{18,1,0,0}
+//  ,{15,2,1,0}
+//  ,{16,2,1,0}
+//  ,{17,2,0,0}
+//  ,{18,2,0,0}
 //  ,{19,3,1,0}
 //pixel pixels[600] = {
 {0,0,0,0}
@@ -667,10 +667,12 @@ pixel pixels[NUM_LEDS] = {
    };
 
 int group[NUM_GROUPS];
+ int bpmIterator = 20;
 CRGBPalette16 currentPalette;
 
 
 void setup() {
+  
   delay(3000); // 3 second delay for recovery
   
   // tell FastLED about the LED strip configuration
@@ -681,14 +683,14 @@ void setup() {
   FastLED.setBrightness(BRIGHTNESS);
 
   //TESTING
-  int bpmIterator;
+ 
   randomSeed(analogRead(0));
 }
 
 
 // List of patterns to cycle through.  Each is defined as a separate function below.
 typedef void (*SimplePatternList[])();
-SimplePatternList gPatterns = { bpmGroupBeta };
+SimplePatternList gPatterns = { bpmGroupBeta, bpmGroupSolidColors , bpmGroupHueChange};
   //bpmGroup, bpmGroupGPLessIndexRange,bpmGroupRandPalette, bpmGroup60, bpmGroup120  };
 
 uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
@@ -704,8 +706,8 @@ void loop()
   // insert a delay to keep the framerate modest
   FastLED.delay(1000/FRAMES_PER_SECOND); 
   
-  EVERY_N_SECONDS (30) { SetupTotallyRandomPalette(); CRGBPalette16 palette = currentPalette;}
-  
+  //EVERY_N_SECONDS (30) { SetupTotallyRandomPalette(); CRGBPalette16 palette = currentPalette;}
+  EVERY_N_SECONDS(60) {bpmIterator = bpmIterator + 10;}
   // do some periodic updates
   EVERY_N_MILLISECONDS( 20 ) { gHue++; } // slowly cycle the "base color" through the rainbow
   EVERY_N_SECONDS( 10 ) { nextPattern(); } // change patterns periodically
@@ -790,7 +792,7 @@ void bpm()
 void bpmGroup()
 {
    
-    uint8_t brightness = 255;
+    //uint8_t brightness = 255;
   for( int g = 0; g < NUM_GROUPS; g++) {
 
     //get a random color from pallette for each group
@@ -811,37 +813,94 @@ void bpmGroup()
 void bpmGroupBeta()
 {
    
-    uint8_t brightness = 255;
+  //  uint8_t brightness = 255;
 
   for( int g = 0; g < NUM_GROUPS; g++) {
 
     //get a random color from pallette for each group
-    int randomColorIndex = randomColorIndex + map(g,0, NUM_GROUPS ,15,105);
+    int randomColorIndex = map(g,0, NUM_GROUPS ,15,105);
   // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
-    uint8_t BeatsPerMinute = 62;
+    uint8_t BeatsPerMinute = bpmIterator;
     //CRGBPalette16 palette = ForestColors_p;
-     CRGBPalette16 palette = RainbowColors_p;
+     CRGBPalette16 palette = PartyColors_p;
     //CRGBPalette16 palette = currentPalette; 
-    uint8_t beat = beatsin8( BeatsPerMinute, 64, 255);
+    uint8_t beat = beatsin8( BeatsPerMinute, 64, 254);
     
      for( int l = 0; l < NUM_LEDS; l++){ //9948
       //leds[l] = ColorFromPalette(palette, gHue+(l*2) + randomColorIndex, beat-gHue+(l*10)); regular group full rainbow
-      leds[l] = ColorFromPalette(palette, randomColorIndex + (l *3 ) + gHue, beat-gHue+(l*2));
+      //leds[l] = ColorFromPalette(palette, randomColorIndex + (l *3 ) + gHue, beat-gHue+(l*2));
+      //if(pixels[l].groupNum == g) {leds[l] = ColorFromPalette(palette, randomColorIndex , beat-gHue+(l*2));}// works nice
+      if(pixels[l].groupNum == g) {leds[l] = ColorFromPalette(palette, randomColorIndex + (pixels[l].radialPosition * 2) + (gHue/2), beat-gHue+(l*10));}
       //if(pixels[l].groupNum == g) {leds[l] = ColorFromPalette( palette, randomColorIndex, brightness);  } 
       //if(pixels[l].groupNum == g) {leds[l] =ColorFromPalette(palette, randomColorIndex, 100);}
     }
   }
 }
 
-void bpmGroupMusic()
+
+void bpmGroupHueChange()
 {
-   // goes well with quick music, needs work on the palette, this is way rainbow.
-    uint8_t brightness = 255;
+   
+  //  uint8_t brightness = 255;
 
   for( int g = 0; g < NUM_GROUPS; g++) {
 
     //get a random color from pallette for each group
-    int randomColorIndex = randomColorIndex + map(g,0, NUM_GROUPS ,15,105);
+    int randomColorIndex = map(g,0, NUM_GROUPS ,15,105);
+  // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
+    uint8_t BeatsPerMinute = bpmIterator;
+    //CRGBPalette16 palette = ForestColors_p;
+     CRGBPalette16 palette = PartyColors_p;
+    //CRGBPalette16 palette = currentPalette; 
+    uint8_t beat = beatsin8( BeatsPerMinute, 64, 254);
+    
+     for( int l = 0; l < NUM_LEDS; l++){ //9948
+      //leds[l] = ColorFromPalette(palette, gHue+(l*2) + randomColorIndex, beat-gHue+(l*10)); regular group full rainbow
+      //leds[l] = ColorFromPalette(palette, randomColorIndex + (l *3 ) + gHue, beat-gHue+(l*2));
+      //if(pixels[l].groupNum == g) {leds[l] = ColorFromPalette(palette, randomColorIndex , beat-gHue+(l*2));}// works nice
+      if(pixels[l].groupNum == g) {leds[l] = ColorFromPalette(palette, randomColorIndex + (pixels[l].radialPosition * 2) + (gHue/2), beat-gHue+(l*10));}
+      //if(pixels[l].groupNum == g) {leds[l] = ColorFromPalette( palette, randomColorIndex, brightness);  } 
+      //if(pixels[l].groupNum == g) {leds[l] =ColorFromPalette(palette, randomColorIndex, 100);}
+    }
+  }
+}
+
+
+void bpmGroupSolidColors()
+{
+   
+  //  uint8_t brightness = 255;
+
+  for( int g = 0; g < NUM_GROUPS; g++) {
+
+    //get a random color from pallette for each group
+    int randomColorIndex = map(g,0, NUM_GROUPS ,15,105);
+  // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
+    uint8_t BeatsPerMinute = bpmIterator;
+    //CRGBPalette16 palette = ForestColors_p;
+     CRGBPalette16 palette = PartyColors_p;
+    //CRGBPalette16 palette = currentPalette; 
+    uint8_t beat = beatsin8( BeatsPerMinute, 64, 254);
+    
+     for( int l = 0; l < NUM_LEDS; l++){ //9948
+      //leds[l] = ColorFromPalette(palette, gHue+(l*2) + randomColorIndex, beat-gHue+(l*10)); regular group full rainbow
+      //leds[l] = ColorFromPalette(palette, randomColorIndex + (l *3 ) + gHue, beat-gHue+(l*2));
+      //if(pixels[l].groupNum == g) {leds[l] = ColorFromPalette(palette, randomColorIndex , beat-gHue+(l*2));}// works nice
+      if(pixels[l].groupNum == g) {leds[l] = ColorFromPalette(palette, randomColorIndex , beat-gHue+(l*10));}
+      //if(pixels[l].groupNum == g) {leds[l] = ColorFromPalette( palette, randomColorIndex, brightness);  } 
+      //if(pixels[l].groupNum == g) {leds[l] =ColorFromPalette(palette, randomColorIndex, 100);}
+    }
+  }
+}
+void bpmGroupMusic()
+{
+   // goes well with quick music, needs work on the palette, this is way rainbow.
+   // uint8_t brightness = 255;
+
+  for( int g = 0; g < NUM_GROUPS; g++) {
+
+    //get a random color from pallette for each group
+    int randomColorIndex = map(g,0, NUM_GROUPS ,15,105);
   // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
     uint8_t BeatsPerMinute = 62;
     //CRGBPalette16 palette = ForestColors_p;
